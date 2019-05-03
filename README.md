@@ -1,4 +1,4 @@
-# flymake-eslint
+# flymake-stylelint
 Flymake backend for CSS and friends using eslint
 
 ## Installation
@@ -35,6 +35,10 @@ useful variables are members of the `flymake-stylelint` group and can be viewed 
   :type 'boolean
   :group 'flymake-stylelint)
 ```
+
+## See Also
+
+[flymake-eslint](https://github.com/orzechowskid/flymake-eslint)
 
 ## License
 
