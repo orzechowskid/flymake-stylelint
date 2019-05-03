@@ -1,6 +1,6 @@
 ;;; flymake-stylelint.el --- A Flymake backend for CSS and friends using stylelint -*- lexical-binding: t; -*-
 
-;;; Version: 1.3.0
+;;; Version: 1.0.0
 
 ;;; Author: Dan Orzechowski
 
