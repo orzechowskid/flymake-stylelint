@@ -36,6 +36,10 @@ useful variables are members of the `flymake-stylelint` group and can be viewed 
   :group 'flymake-stylelint)
 ```
 
+## See Also
+
+[flymake-eslint](https://github.com/orzechowskid/flymake-eslint)
+
 ## License
 
 MIT
