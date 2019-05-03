@@ -7,7 +7,7 @@ Flymake backend for CSS and friends using eslint
 1. Install: download and place inside `~/.emacs.d/lisp`.  then edit `~/.emacs` or equivalent:
   ```lisp
   (add-to-list 'load-path "~/.emacs.d/lisp")
-  (require "flymake-eslint.el")
+  (require "flymake-stylelint.el")
   ```
 2. Enable:
 ```lisp
