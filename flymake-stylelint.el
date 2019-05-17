@@ -117,7 +117,11 @@ Create linter process for SOURCE-BUFFER which invokes CALLBACK once linter is fi
          :connection-type 'pipe
          :noquery t
          :buffer (generate-new-buffer " *flymake-stylelint*")
-         :command (list flymake-stylelint-executable-name "--no-color" "--stdin-filename" (buffer-name source-buffer) (or flymake-stylelint-executable-args ""))
+         :command (if flymake-stylelint-executable-args
+                      ;; stylelint will glob `""' which lints the entire directory :-|
+                      ;; todo: check out the `--aei' flag
+                      (list flymake-stylelint-executable-name "--no-color" "--stdin-filename" (buffer-name source-buffer) flymake-stylelint-executable-args)
+                    (list flymake-stylelint-executable-name "--no-color" "--stdin-filename" (buffer-name source-buffer)))
          :sentinel (lambda (proc &rest ignored)
                      ;; do stuff upon child process termination
                      (when (and (eq 'exit (process-status proc))
