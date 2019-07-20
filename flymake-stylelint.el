@@ -1,6 +1,6 @@
 ;;; flymake-stylelint.el --- A Flymake backend for CSS and friends using stylelint -*- lexical-binding: t; -*-
 
-;;; Version: 1.0.1
+;;; Version: 1.0.2
 
 ;;; Author: Dan Orzechowski
 
@@ -125,6 +125,8 @@ Create linter process for SOURCE-BUFFER which invokes CALLBACK once linter is fi
          :sentinel (lambda (proc &rest ignored)
                      ;; do stuff upon child process termination
                      (when (and (eq 'exit (process-status proc))
+                                ;; make sure we're not using a deleted buffer
+                                (buffer-live-p source-buffer)
                                 ;; make sure we're using the latest lint process
                                 (with-current-buffer source-buffer (eq proc flymake-stylelint--process)))
                        ;; read from stylelint output then destroy temp buffer when done
