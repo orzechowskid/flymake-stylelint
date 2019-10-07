@@ -34,6 +34,13 @@ useful variables are members of the `flymake-stylelint` group and can be viewed 
   "Set to t to append rule name to end of warning or error message, nil otherwise."
   :type 'boolean
   :group 'flymake-stylelint)
+
+(defcustom flymake-stylelint-defer-binary-check nil
+  "Set to t to bypass the initial check which ensures stylelint is present.
+
+Useful when the value of variable `exec-path' is set dynamically and the location of stylelint might not be known ahead of time."
+  :type 'boolean
+  :group 'flymake-stylelint)
 ```
 
 ## See Also

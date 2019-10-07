@@ -1,6 +1,6 @@
 ;;; flymake-stylelint.el --- A Flymake backend for CSS and friends using stylelint -*- lexical-binding: t; -*-
 
-;;; Version: 1.0.2
+;;; Version: 1.1.0
 
 ;;; Author: Dan Orzechowski
 
@@ -46,6 +46,13 @@
 
 (defcustom flymake-stylelint-show-rule-name t
   "Set to t to append rule name to end of warning or error message, nil otherwise."
+  :type 'boolean
+  :group 'flymake-stylelint)
+
+(defcustom flymake-stylelint-defer-binary-check nil
+  "Set to t to bypass the initial check which ensures stylelint is present.
+
+Useful when the value of variable `exec-path' is set dynamically and the location of stylelint might not be known ahead of time."
   :type 'boolean
   :group 'flymake-stylelint)
 
@@ -137,6 +144,8 @@ Create linter process for SOURCE-BUFFER which invokes CALLBACK once linter is fi
 (defun flymake-stylelint--check-and-report (source-buffer flymake-report-fn)
   "Internal function.
 Run stylelint against SOURCE-BUFFER and use FLYMAKE-REPORT-FN to report results."
+  (if flymake-stylelint-defer-binary-check
+      (flymake-stylelint--ensure-binary-exists))
   (flymake-stylelint--create-process
    source-buffer
    (lambda (stylelint-stdout)
@@ -158,7 +167,8 @@ Run stylelint on the current buffer, and report results using FLYMAKE-REPORT-FN.
 (defun flymake-stylelint-enable ()
   "Enable Flymake and add flymake-stylelint as a buffer-local Flymake backend."
   (interactive)
-  (flymake-stylelint--ensure-binary-exists)
+  (if (not flymake-stylelint-defer-binary-check)
+      (flymake-stylelint--ensure-binary-exists))
   (flymake-mode t)
   (add-hook 'flymake-diagnostic-functions 'flymake-stylelint--checker nil t))
 
