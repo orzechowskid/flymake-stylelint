@@ -1,5 +1,5 @@
 # flymake-stylelint
-Flymake backend for CSS and friends using eslint
+Flymake backend for CSS and friends using stylelint
 
 ## Installation
 
