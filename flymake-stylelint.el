@@ -60,8 +60,7 @@ Useful when the value of variable `exec-path' is set dynamically and the locatio
 ;; internal variables
 
 
-;; todo: investigate `stylelint -f'?
-(defvar flymake-stylelint--message-regex "^[[:space:]]*\\([0-9]+\\):\\([0-9]+\\)[[:space:]]+\\(✖\\|⚠\\)[[:space:]]+\\(.+?\\)[[:space:]]\\{2,\\}\\(.*\\)$"
+(defvar flymake-stylelint--message-regex "^\\(.+\\):\\([0-9]+\\):\\([0-9]+\\):[[:space:]]\\(.+\\)[[:space:]](\\(.+\\))[[:space:]]\\[\\([[:alpha:]]+\\)]$"
   "Internal variable.
 Regular expression definition to match stylelint messages.")
 
@@ -93,18 +92,15 @@ Create Flymake diag messages from contents of STYLELINT-STDOUT-BUFFER, to be rep
       (let ((results '()))
         (while (not (eobp))
           (when (looking-at flymake-stylelint--message-regex)
-            (let* ((row (string-to-number (match-string 1)))
-                   (column (string-to-number (match-string 2)))
-                   (type (match-string 3))
+            (let* ((row (string-to-number (match-string 2)))
+                   (column (string-to-number (match-string 3)))
                    (msg (match-string 4))
                    (lint-rule (match-string 5))
-                   (type-str (if (string= type "✖")
-                                 "Error"
-                               "Warning"))
-	           (msg-text (if flymake-stylelint-show-rule-name
-                                 (format "%s: %s [%s]" type-str msg lint-rule)
+                   (type-str (match-string 6))
+                   (msg-text (if flymake-stylelint-show-rule-name
+                               (format "%s: %s [%s]" type-str msg lint-rule)
                                (format "%s: %s" type-str msg)))
-                   (type-symbol (if (string-equal "Warning" type-str) :warning :error))
+                   (type-symbol (if (string-equal "warning" type-str) :warning :error))
                    (src-pos (flymake-diag-region source-buffer row column)))
               ;; new Flymake diag message
               (push (flymake-make-diagnostic source-buffer (car src-pos) (cdr src-pos) type-symbol msg-text) results)))
@@ -127,8 +123,8 @@ Create linter process for SOURCE-BUFFER which invokes CALLBACK once linter is fi
          :command (if flymake-stylelint-executable-args
                       ;; stylelint will glob `""' which lints the entire directory :-|
                       ;; todo: check out the `--aei' flag
-                      (list flymake-stylelint-executable-name "--no-color" "--stdin-filename" (buffer-name source-buffer) flymake-stylelint-executable-args)
-                    (list flymake-stylelint-executable-name "--no-color" "--stdin-filename" (buffer-name source-buffer)))
+                      (list flymake-stylelint-executable-name "--formatter=unix" "--no-color" "--stdin-filename" (buffer-name source-buffer) flymake-stylelint-executable-args)
+                    (list flymake-stylelint-executable-name "--formatter=unix" "--no-color" "--stdin-filename" (buffer-name source-buffer)))
          :sentinel (lambda (proc &rest ignored)
                      ;; do stuff upon child process termination
                      (when (and (eq 'exit (process-status proc))
