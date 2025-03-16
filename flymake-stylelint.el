@@ -1,6 +1,6 @@
 ;;; flymake-stylelint.el --- A Flymake backend for CSS and friends using stylelint -*- lexical-binding: t; -*-
 
-;;; Version: 1.1.0
+;;; Version: 1.2.0
 
 ;;; Author: Dan Orzechowski
 
@@ -41,7 +41,7 @@
 
 (defcustom flymake-stylelint-executable-args nil
   "Extra arguments to pass to stylelint."
-  :type 'string
+  :type '(choice string (repeat string))
   :group 'flymake-stylelint)
 
 (defcustom flymake-stylelint-show-rule-name t
@@ -55,6 +55,12 @@
 Useful when the value of variable `exec-path' is set dynamically and the location of stylelint might not be known ahead of time."
   :type 'boolean
   :group 'flymake-stylelint)
+
+(defcustom flymake-stylelint-use-global t
+	"Whether to use a globally-installed (i.e. `npm i -g`) stylelint or a locally-
+installed (i.e. `npx stylelint`) one."
+	:type 'boolean
+	:group 'flymake-stylelint)
 
 
 ;; internal variables
@@ -107,45 +113,63 @@ Create Flymake diag messages from contents of STYLELINT-STDOUT-BUFFER, to be rep
           (forward-line 1))
         results))))
 
+(defun flymake-stylelint--executable-name ()
+	"Internal function.  Get the stylelint binary to invoke."
+	(if flymake-stylelint-use-global
+			(list flymake-stylelint-executable-name)
+		(list "npx"
+					flymake-stylelint-executable-name)))
+
+(defun flymake-stylelint--executable-args ()
+	"Internal function.  Get a list of additional arguments to pass to the
+stylelint process."
+	(if (listp flymake-eslint-executable-args)
+			flymake-eslint-executable-args
+		(list flymake-eslint-executable-args)))
+
 ;; heavily based on the example found at
 ;; https://www.gnu.org/software/emacs/manual/html_node/flymake/An-annotated-example-backend.html
 (defun flymake-stylelint--create-process (source-buffer callback)
   "Internal function.
 Create linter process for SOURCE-BUFFER which invokes CALLBACK once linter is finished.  CALLBACK is passed one argument, which is a buffer containing stdout from linter."
-  (when (process-live-p flymake-stylelint--process)
+	(when (process-live-p flymake-stylelint--process)
     (kill-process flymake-stylelint--process))
-  (setq flymake-stylelint--process
-        (make-process
-         :name "flymake-stylelint"
-         :connection-type 'pipe
-         :noquery t
-         :buffer (generate-new-buffer " *flymake-stylelint*")
-         :command (if flymake-stylelint-executable-args
-                      ;; stylelint will glob `""' which lints the entire directory :-|
-                      ;; todo: check out the `--aei' flag
-                      (list flymake-stylelint-executable-name "--formatter=unix" "--no-color" "--stdin-filename" (buffer-name source-buffer) flymake-stylelint-executable-args)
-                    (list flymake-stylelint-executable-name "--formatter=unix" "--no-color" "--stdin-filename" (buffer-name source-buffer)))
-         :sentinel (lambda (proc &rest ignored)
-                     ;; do stuff upon child process termination
-                     (when (and (eq 'exit (process-status proc))
-                                ;; make sure we're not using a deleted buffer
-                                (buffer-live-p source-buffer)
-                                ;; make sure we're using the latest lint process
-                                (with-current-buffer source-buffer (eq proc flymake-stylelint--process)))
-                       ;; read from stylelint output then destroy temp buffer when done
-                       (let ((proc-buffer (process-buffer proc)))
-                         (funcall callback proc-buffer)
-                         (kill-buffer proc-buffer)))))))
+	(let ((cmd `(,@(flymake-stylelint--executable-name)
+							 "--formatter=unix"
+							 "--no-color"
+							 "--stdin-filename"
+							 ,(or (buffer-file-name source-buffer)
+										(buffer-name source-buffer))
+							 ;; splice in a (possibly empty) list of executable args
+							 ,@(flymake-stylelint--executable-args))))
+		(setq flymake-stylelint--process
+					(make-process
+					 :name "flymake-stylelint"
+					 :connection-type 'pipe
+					 :noquery t
+					 :buffer (generate-new-buffer " *flymake-stylelint*")
+					 :command cmd
+					 :sentinel (lambda (proc &rest ignored)
+											 ;; do stuff upon child process termination
+											 (when (and (eq 'exit (process-status proc))
+																	;; make sure we're not using a deleted buffer
+																	(buffer-live-p source-buffer)
+																	;; make sure we're using the latest lint process
+																	(with-current-buffer source-buffer (eq proc flymake-stylelint--process)))
+												 ;; read from stylelint output then destroy temp buffer when done
+												 (let ((proc-buffer (process-buffer proc)))
+													 (funcall callback proc-buffer)
+													 (kill-buffer proc-buffer))))))))
 
 (defun flymake-stylelint--check-and-report (source-buffer flymake-report-fn)
   "Internal function.
 Run stylelint against SOURCE-BUFFER and use FLYMAKE-REPORT-FN to report results."
   (if flymake-stylelint-defer-binary-check
       (flymake-stylelint--ensure-binary-exists))
-  (flymake-stylelint--create-process
-   source-buffer
-   (lambda (stylelint-stdout)
-     (funcall flymake-report-fn (flymake-stylelint--report stylelint-stdout source-buffer))))
+	(flymake-stylelint--create-process
+	 source-buffer
+	 (lambda (stylelint-stdout)
+		 (funcall flymake-report-fn (flymake-stylelint--report stylelint-stdout source-buffer))))
   (with-current-buffer source-buffer
     (process-send-string flymake-stylelint--process (buffer-string))
     (process-send-eof flymake-stylelint--process)))
