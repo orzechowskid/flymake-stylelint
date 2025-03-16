@@ -41,6 +41,11 @@ useful variables are members of the `flymake-stylelint` group and can be viewed 
 Useful when the value of variable `exec-path' is set dynamically and the location of stylelint might not be known ahead of time."
   :type 'boolean
   :group 'flymake-stylelint)
+
+(defcustom flymake-stylelint-use-global t
+	"Whether to use a globally-installed (i.e. `npm i -g`) stylelint or a locally-installed (i.e. `npx stylelint`) one."
+	:type 'boolean
+	:group 'flymake-stylelint)
 ```
 
 ## See Also
